@@ -1,9 +1,6 @@
 #include "headers.hpp"
 
-
-
 int main(int argc, char* argv[]) {
-
     string dataset = argv[1], classifierNamePrefix = argv[2], classifierNameSuffix = CSV_FILE_FORMAT, numberString, labels = argv[1];
 
     dataset += DATASET_FILENAME;

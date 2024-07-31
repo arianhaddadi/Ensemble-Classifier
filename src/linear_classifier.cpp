@@ -1,10 +1,6 @@
 #include "headers.hpp"
 
 
-
-
-
-
 int main(int argc, char* argv[]) {
     
     char* datasetFilename = (char*) malloc(MAX_LENGTH * sizeof(char)); 

@@ -23,7 +23,6 @@ vector<string> parse(string line, char delimiter) {
     return parts;
 }
 
-
 double dotProduct(vector<string>& v1, vector<string>& v2) {
     double product = 0;
     for (int i = 0 ; i < v2.size(); i++) {
@@ -55,7 +54,6 @@ bool contains(double num, vector<double>& container) {
     }
     return false;
 }
-
 
 double maximum(vector<double>& row) {
     map<double, double> repeat;
@@ -95,7 +93,7 @@ void calAccuracy(vector<double>& estimate, vector<double>& real) {
             correctEstimate++;
         }
     }
-    cout << "‫‪Accuracy:‬‬ " << fixed << setprecision(2) << (double)correctEstimate/(double)estimate.size()*100 << "%" << endl;
+    cout << "Accuracy:" << fixed << setprecision(2) << (double)correctEstimate/(double)estimate.size()*100 << "%" << endl;
 }
 
 void sendToEnsembleClassifier(vector<vector<double>>& table, char* VoterPipeFilename) {
@@ -111,7 +109,6 @@ void sendToEnsembleClassifier(vector<vector<double>>& table, char* VoterPipeFile
 
     close(fd);
 }
-
 
 
 void classifyDataset(vector<vector<string>>& weightVectors, char* datasetFilename, char* namedPipeFilename, char* index) {

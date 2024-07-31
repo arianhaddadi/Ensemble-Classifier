@@ -1,7 +1,6 @@
 #include "headers.hpp"
  
 
-
 int main(int argc, char* argv[]) {
 
     char* voterPipeFilename = argv[1];
