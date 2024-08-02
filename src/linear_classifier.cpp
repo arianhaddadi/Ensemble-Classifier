@@ -1,24 +1,25 @@
 #include "headers.hpp"
 
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
+    char datasetAddress[MAX_LENGTH];
+    char namedPipeFilename[MAX_LENGTH];
+    char weightsFileAddress[MAX_LENGTH];
+    char index[MAX_LENGTH];
 
-    char* datasetFilename = (char*) malloc(MAX_LENGTH * sizeof(char)); 
-    read(atoi(argv[1]), datasetFilename, MAX_LENGTH);
-    
-    char* namedPipeFilename = (char*) malloc(MAX_LENGTH * sizeof(char)); 
-    read(atoi(argv[1]), namedPipeFilename, MAX_LENGTH);
-    
-    char* weightVectorFilename = (char*) malloc(MAX_LENGTH * sizeof(char)); 
-    read(atoi(argv[1]), weightVectorFilename, MAX_LENGTH);
-
-    char* index = (char*) malloc(MAX_LENGTH * sizeof(char));
-    read(atoi(argv[1]), index, MAX_LENGTH);
+    /* Get file descriptor of the read end of the pipe shared by this process
+     * and its parent process */
+    int pipefd = atoi(argv[1]);
+    read(pipefd, datasetAddress, MAX_LENGTH);
+    read(pipefd, namedPipeFilename, MAX_LENGTH);
+    read(pipefd, weightsFileAddress, MAX_LENGTH);
+    read(pipefd, index, MAX_LENGTH);
+    close(pipefd);
 
     std::vector<std::vector<std::string>> weightVectors;
-    getWeights(weightVectors, weightVectorFilename);
+    getWeights(weightVectors, weightsFileAddress);
 
-    classifyDataset(weightVectors, datasetFilename, namedPipeFilename, index);
+    classifyDataset(weightVectors, datasetAddress, namedPipeFilename, index);
 
     return 0;
 }

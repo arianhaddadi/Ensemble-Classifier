@@ -1,42 +1,39 @@
 #include "headers.hpp"
- 
 
-int main(int argc, char* argv[]) {
 
-    char* voterPipeFilename = argv[1];
-    char* LinearPipeFilename = (char*) malloc (MAX_LENGTH * sizeof(char));
-    char* datasetLengthStr = (char*) malloc (MAX_LENGTH * sizeof(char));
-    char* numOfClassifierStr = (char*) malloc (MAX_LENGTH * sizeof(char));
+int main(int argc, char *argv[]) {
+    // Name of named pipe shared between this process and ensemble classifier
+    char *ensembleNamedPipeName = argv[1];
 
-    int fd = open(voterPipeFilename, O_RDONLY);
+    char linearNamedPipeName[MAX_LENGTH];
+    char datasetLengthStr[MAX_LENGTH];
+    char numOfClassifierStr[MAX_LENGTH];
 
-    read(fd, LinearPipeFilename, MAX_LENGTH);
+    int fd = open(ensembleNamedPipeName, O_RDONLY);
+    read(fd, linearNamedPipeName, MAX_LENGTH);
     read(fd, datasetLengthStr, MAX_LENGTH);
     read(fd, numOfClassifierStr, MAX_LENGTH);
-    
     close(fd);
 
-    int datasetLength = atoi(datasetLengthStr); 
+    int datasetLength = atoi(datasetLengthStr);
     int numOfClassifier = atoi(numOfClassifierStr);
 
     std::vector<int> row(numOfClassifier);
     std::vector<std::vector<int>> table(datasetLength, row);
 
-    int numOfReadData = 0, numOfTotalData = numOfClassifier * datasetLength;
+    int numOfReadData = 0;
+    int numOfTotalData = numOfClassifier * datasetLength;
 
-    fd = open(LinearPipeFilename, O_RDONLY);
-    char* readData = (char*) malloc(MAX_LENGTH * sizeof(char));
-
+    fd = open(linearNamedPipeName, O_RDONLY);
+    char readBuffer[MAX_LENGTH];
     while (numOfReadData < numOfTotalData) {
-        clear(readData);
-        read(fd, readData, MAX_LENGTH);
-        save(table, readData);
+        read(fd, readBuffer, MAX_LENGTH);
+        save(table, readBuffer);
         numOfReadData++;
     }
-
     close(fd);
 
-    sendToEnsembleClassifier(table, voterPipeFilename);
+    sendToEnsembleClassifier(table, ensembleNamedPipeName);
 
     return 0;
 }

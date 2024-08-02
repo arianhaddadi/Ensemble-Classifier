@@ -1,26 +1,15 @@
 #include "headers.hpp"
 
-void clear(char *chr) {
-    for (int i = 0; i < MAX_LENGTH; i++) {
-        chr[i] = '\0';
-    }
-}
-
 std::vector<std::string> parse(const std::string &line, char delimiter) {
-    std::vector<std::string> parts;
-    std::string part;
-    int i = 0;
-    while (true) {
-        part = "";
-        while (i < line.size() && line[i] != delimiter) {
-            part += line[i];
-            i++;
-        }
-        parts.push_back(part);
-        if (i >= line.size()) break;
-        i++;
+    std::vector<std::string> result;
+    std::stringstream ss(line);
+    std::string item;
+
+    while (std::getline(ss, item, delimiter)) {
+        result.push_back(item);
     }
-    return parts;
+
+    return result;
 }
 
 float dotProduct(const std::vector<std::string> &v1,
@@ -32,16 +21,6 @@ float dotProduct(const std::vector<std::string> &v1,
     return product + stof(v1[v1.size() - 1]);
 }
 
-void prepareMsg(char *msg, char *index, const std::string &lineNum,
-                const std::string &classNum) {
-    clear(msg);
-    strcat(msg, index);
-    strcat(msg, COORD_DELIMITER_STRING);
-    strcat(msg, lineNum.c_str());
-    strcat(msg, COORD_DELIMITER_STRING);
-    strcat(msg, classNum.c_str());
-}
-
 void save(std::vector<std::vector<int>> &table, char *readData) {
     std::vector<std::string> partsOfReadData =
             parse(readData, COORD_DELIMITER_CHARACTER);
@@ -51,24 +30,21 @@ void save(std::vector<std::vector<int>> &table, char *readData) {
     table[y][x] = numOfClass;
 }
 
-int maximum(const std::vector<int> &row) {
-    std::map<int, int> repeat;
-    std::vector<int> keys;
-    int maxValue = 0, maxKey;
-    for (int i = 0; i < row.size(); i++) {
-        repeat[row[i]]++;
-        if (repeat[row[i]] == 1) {
-            keys.push_back(row[i]);
+int collectMajorityVote(const std::vector<int> &votes) {
+    std::map<int, int> repeats;
+    int maxRepeats = 0;
+    int majorityVote;
+
+    for (int vote: votes) {
+        if (++repeats[vote] > maxRepeats) {
+            maxRepeats = repeats[vote];
+            majorityVote = vote;
+        } else if (repeats[vote] == maxRepeats && vote < majorityVote) {
+            majorityVote = vote;
         }
     }
-    sort(keys.begin(), keys.end());
-    for (int i = 0; i < keys.size(); i++) {
-        if (repeat[keys[i]] > maxValue) {
-            maxValue = repeat[keys[i]];
-            maxKey = keys[i];
-        }
-    }
-    return maxKey;
+
+    return majorityVote;
 }
 
 void getLabels(std::vector<int> &labelsVector, const std::string &filename) {
@@ -95,16 +71,16 @@ void calAccuracy(const std::vector<int> &estimate,
               << "%" << std::endl;
 }
 
-void sendToEnsembleClassifier(const std::vector<std::vector<int>> &table,
-                              char *VoterPipeFilename) {
-    std::vector<int> votes;
-    for (int i = 0; i < table.size(); i++) {
-        votes.push_back(maximum(table[i]));
+void sendToEnsembleClassifier(const std::vector<std::vector<int>> &votes,
+                              char *ensembleNamedPipeName) {
+    std::vector<int> majorityVotes(votes.size());
+    for (int i = 0; i < votes.size(); i++) {
+        majorityVotes[i] = collectMajorityVote(votes[i]);
     }
 
-    int fd = open(VoterPipeFilename, O_WRONLY);
-    for (int i = 0; i < table.size(); i++) {
-        write(fd, std::to_string(votes[i]).c_str(), MAX_LENGTH);
+    int fd = open(ensembleNamedPipeName, O_WRONLY);
+    for (int i = 0; i < votes.size(); i++) {
+        write(fd, std::to_string(majorityVotes[i]).c_str(), MAX_LENGTH);
     }
     close(fd);
 }
@@ -118,7 +94,6 @@ void classifyDataset(const std::vector<std::vector<std::string>> &weightVectors,
 
     int fd = open(namedPipeFilename, O_WRONLY);
 
-    char *msg = (char *) malloc(MAX_LENGTH * sizeof(char));
     std::string line;
     std::vector<std::string> csvLine;
     getline(dataset, line);
@@ -136,9 +111,12 @@ void classifyDataset(const std::vector<std::vector<std::string>> &weightVectors,
                 indexOfMax = i;
             }
         }
-        prepareMsg(msg, index, std::to_string(lineNum),
-                   std::to_string(indexOfMax));
-        write(fd, msg, MAX_LENGTH);
+
+        std::stringstream message;
+        message << index << COORD_DELIMITER_STRING << lineNum
+                << COORD_DELIMITER_STRING << indexOfMax;
+
+        write(fd, message.str().c_str(), MAX_LENGTH);
         lineNum++;
     }
 
@@ -169,7 +147,7 @@ int getNumOfClassifiers(const std::string &classifiersDirectory) {
         std::stringstream fileAddress;
         fileAddress << classifiersDirectory << "/" << CLASSIFIER_FILENAME_PREFIX
                     << std::to_string(counter) << CSV_FILE_FORMAT;
-        
+
         int fd = open(fileAddress.str().c_str(), O_RDONLY);
         if (fd < 0) break;
         counter++;
@@ -179,25 +157,24 @@ int getNumOfClassifiers(const std::string &classifiersDirectory) {
 }
 
 void communicateWithVoter(const std::vector<int> &labelsVector,
-                          const std::string &voterPipeFilename,
-                          const std::string &namedPipeFilename,
+                          const std::string &voterNamedPipeName,
+                          const std::string &linearClassifierNamedPipeName,
                           int numOfClassifiers) {
 
     // send data to voter
-    int fd = open(voterPipeFilename.c_str(), O_WRONLY);
-    write(fd, namedPipeFilename.c_str(), MAX_LENGTH);
+    int fd = open(voterNamedPipeName.c_str(), O_WRONLY);
+    write(fd, linearClassifierNamedPipeName.c_str(), MAX_LENGTH);
     write(fd, std::to_string(labelsVector.size()).c_str(), MAX_LENGTH);
     write(fd, std::to_string(numOfClassifiers).c_str(), MAX_LENGTH);
     close(fd);
 
     // receive data from voter
-    fd = open(voterPipeFilename.c_str(), O_RDONLY);
+    fd = open(voterNamedPipeName.c_str(), O_RDONLY);
     std::vector<int> estimatedLabels;
-    char *readLabel = (char *) malloc(MAX_LENGTH * sizeof(char));
+    char readBuffer[MAX_LENGTH];
     for (int i = 0; i < labelsVector.size(); i++) {
-        clear(readLabel);
-        read(fd, readLabel, MAX_LENGTH);
-        estimatedLabels.push_back(atoi(readLabel));
+        read(fd, readBuffer, MAX_LENGTH);
+        estimatedLabels.push_back(atoi(readBuffer));
     }
     close(fd);
 

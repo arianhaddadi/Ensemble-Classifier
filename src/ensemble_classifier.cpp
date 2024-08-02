@@ -1,18 +1,17 @@
 #include "headers.hpp"
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     std::string validationDirectory = argv[1];
-    std::string classifiersDirectory = argv[2];
+    std::string weightsDirectory = argv[2];
 
-    std::string datasetAddress = validationDirectory + DATASET_FILENAME;
-    std::string labelsAddress = validationDirectory + LABELS_FILENAME;
+    std::string datasetFileAddress =
+            validationDirectory + "/" + DATASET_FILENAME;
+    std::string labelsFileAddress = validationDirectory + "/" + LABELS_FILENAME;
 
     std::vector<int> labelsVector;
-    getLabels(labelsVector, labelsAddress);
+    getLabels(labelsVector, labelsFileAddress);
 
-    int numOfClassifiers = getNumOfClassifiers(classifiersDirectory);
-    
-    std::vector<char*> readPipes(numOfClassifiers);
+    int numOfClassifiers = getNumOfClassifiers(weightsDirectory);
 
     mkfifo(LINEAR_CLASSIFIER_FIFO_FILE, PIPE_FLAG);
     mkfifo(VOTER_FIFO_FILE, PIPE_FLAG);
@@ -23,39 +22,38 @@ int main(int argc, char* argv[]) {
         pipe(p[i]);
         int pid = fork();
         if (pid == 0) {
-            readPipes[i] = (char*)malloc(MAX_LENGTH * sizeof(char));
-            sprintf(readPipes[i], "%d", p[i][0]);
-            char* args[] = {(char*)"./linear_classifier",
-                            readPipes[i], nullptr};
+            close(p[i][1]); // close the write end of the pipe
+            std::string pipeReadFdStr = std::to_string(p[i][0]);
+            char *args[] = {(char *) LINEAR_CLASSIFIER_EXECUTABLE_NAME,
+                            (char*) pipeReadFdStr.c_str(), nullptr};
             execvp(args[0], args);
-        }
-        else {
+        } else {
+            close(p[i][0]); // close the read end of the pipe
             std::string classifierNumStr = std::to_string(i);
-            std::stringstream classifierAddress;
-            classifierAddress << classifiersDirectory << "/"
-                           << CLASSIFIER_FILENAME_PREFIX << classifierNumStr
-                           << CSV_FILE_FORMAT;
+            std::stringstream weightsFileAddress;
+            weightsFileAddress << weightsDirectory << "/"
+                               << CLASSIFIER_FILENAME_PREFIX << classifierNumStr
+                               << CSV_FILE_FORMAT;
 
-
-            write(p[i][1], datasetAddress.c_str(), MAX_LENGTH);
+            write(p[i][1], datasetFileAddress.c_str(), MAX_LENGTH);
             write(p[i][1], LINEAR_CLASSIFIER_FIFO_FILE, MAX_LENGTH);
-            write(p[i][1], classifierAddress.str().c_str(), MAX_LENGTH);
+            write(p[i][1], weightsFileAddress.str().c_str(), MAX_LENGTH);
             write(p[i][1], classifierNumStr.c_str(), MAX_LENGTH);
         }
     }
 
     if (fork() == 0) {
-        char* args[] = {(char*)"./voter",
-                        (char*)VOTER_FIFO_FILE, nullptr};
+        // child process
+        char *args[] = {(char *) VOTER_EXECUTABLE_NAME,
+                        (char *) VOTER_FIFO_FILE, nullptr};
         execvp(args[0], args);
-    }
-    else {
+    } else {
+        // parent process
         communicateWithVoter(labelsVector, VOTER_FIFO_FILE,
                              LINEAR_CLASSIFIER_FIFO_FILE, numOfClassifiers);
     }
 
-    for (int i = 0 ; i < numOfClassifiers; i++) {
-        close(p[i][0]);
+    for (int i = 0; i < numOfClassifiers; i++) {
         close(p[i][1]);
         wait(nullptr);
     }
