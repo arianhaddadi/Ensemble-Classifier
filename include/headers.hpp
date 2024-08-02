@@ -1,7 +1,7 @@
 #include <iostream> 
 #include <unistd.h> 
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <vector>
 #include <fcntl.h> 
 #include <fstream>
@@ -12,32 +12,31 @@
 #include <iomanip>
 
 
-#define MAX_LENGTH 50
-#define NUM_OF_VOTERS 1
+#define MAX_LENGTH 100
 #define PIPE_FLAG 0666
 #define CSV_DELIMITER ','
 #define LABELS_FILENAME "/labels.csv"
+#define LINEAR_CLASSIFIER_FIFO_FILE "npf"
+#define VOTER_FIFO_FILE "vpf"
 #define DATASET_FILENAME "/dataset.csv"
-#define CLASSIFIER_FILENAME "/classifier_"
+#define CLASSIFIER_FILENAME_PREFIX "classifier_"
 #define CSV_FILE_FORMAT ".csv"
 #define COORD_DELIMITER_CHARACTER '_'
 #define COORD_DELIMITER_STRING "_"
 
-
-using namespace std;
-
-
 void clear(char*);
-vector<string> parse(string, char);
-double dotProduct(vector<string>&, vector<string>&);
-void prepareMsg(char*, char*, string, string);
-void save(vector<vector<double>>&, char*);
-bool contains(double, vector<double>&);
-double maximum(vector<double>&);
-void getLabels(vector<double> &, string);
-void calAccuracy(vector<double>&, vector<double>&);
-void sendToEnsembleClassifier(vector<vector<double>>&, char*);
-void communicateWithVoter(vector<double>&, char*, char*, int);
-void getWeights(vector<vector<string>>&, char*);
-void classifyDataset(vector<vector<string>>&, char*, char*, char*);
-int getNumOfClassifiers(string, string);
+std::vector<std::string> parse(const std::string&, char);
+float dotProduct(const std::vector<std::string>&,
+                 const std::vector<std::string>&);
+void prepareMsg(char*, char*, const std::string&, const std::string&);
+void save(std::vector<std::vector<int>>&, char*);
+int maximum(const std::vector<int>&);
+void getLabels(std::vector<int>&, const std::string&);
+void calAccuracy(const std::vector<int>&, const std::vector<int>&);
+void sendToEnsembleClassifier(const std::vector<std::vector<int>>&, char*);
+void communicateWithVoter(const std::vector<int>&, const std::string&,
+                          const std::string&, int);
+void getWeights(std::vector<std::vector<std::string>>&, char*);
+void classifyDataset(const std::vector<std::vector<std::string>>&, char*,
+                     char*, char*);
+int getNumOfClassifiers(const std::string&);

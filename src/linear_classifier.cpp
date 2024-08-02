@@ -2,7 +2,7 @@
 
 
 int main(int argc, char* argv[]) {
-    
+
     char* datasetFilename = (char*) malloc(MAX_LENGTH * sizeof(char)); 
     read(atoi(argv[1]), datasetFilename, MAX_LENGTH);
     
@@ -15,9 +15,9 @@ int main(int argc, char* argv[]) {
     char* index = (char*) malloc(MAX_LENGTH * sizeof(char));
     read(atoi(argv[1]), index, MAX_LENGTH);
 
-    vector<vector<string>> weightVectors;
+    std::vector<std::vector<std::string>> weightVectors;
     getWeights(weightVectors, weightVectorFilename);
-    
+
     classifyDataset(weightVectors, datasetFilename, namedPipeFilename, index);
 
     return 0;

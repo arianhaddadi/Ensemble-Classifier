@@ -19,8 +19,8 @@ int main(int argc, char* argv[]) {
     int datasetLength = atoi(datasetLengthStr); 
     int numOfClassifier = atoi(numOfClassifierStr);
 
-    vector<double> row(numOfClassifier);
-    vector<vector<double>> table(datasetLength, row);
+    std::vector<int> row(numOfClassifier);
+    std::vector<std::vector<int>> table(datasetLength, row);
 
     int numOfReadData = 0, numOfTotalData = numOfClassifier * datasetLength;
 
