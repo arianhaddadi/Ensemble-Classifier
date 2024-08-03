@@ -10,19 +10,15 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(SRC_DIR src)
 set(INCLUDE_DIR include)
 
+file(GLOB ENSEMBLE_SOURCES "${SRC_DIR}/ensemble/*.cpp")
+file(GLOB LINEAR_SOURCES "${SRC_DIR}/linear/*.cpp")
+file(GLOB VOTER_SOURCES "${SRC_DIR}/voter/*.cpp")
+file(GLOB COMMON "${SRC_DIR}/utils/utils.cpp")
+
 include_directories(${INCLUDE_DIR})
 
-add_executable(ensemble_classifier
-        ${SRC_DIR}/ensemble_classifier.cpp
-        ${SRC_DIR}/utils.cpp
-)
+add_executable(ensemble ${ENSEMBLE_SOURCES} ${COMMON})
 
-add_executable(linear_classifier
-        ${SRC_DIR}/linear_classifier.cpp
-        ${SRC_DIR}/utils.cpp
-)
+add_executable(linear ${LINEAR_SOURCES} ${COMMON})
 
-add_executable(voter
-        ${SRC_DIR}/voter.cpp
-        ${SRC_DIR}/utils.cpp
-)
+add_executable(voter ${VOTER_SOURCES} ${COMMON})
