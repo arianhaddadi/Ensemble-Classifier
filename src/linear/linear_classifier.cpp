@@ -2,54 +2,54 @@
 #include "utils.h"
 #include <fcntl.h>
 #include <fstream>
+#include <sstream>
 #include <unistd.h>
 
-#define MAX_LENGTH 100
-#define CSV_DELIMITER ','
-#define COORD_DELIMITER_CHAR '_'
-
 void LinearClassifier::run(char **argv) {
-  char datasetAddress[MAX_LENGTH];
-  char namedPipeFilename[MAX_LENGTH];
-  char weightsFileAddress[MAX_LENGTH];
-  char index[MAX_LENGTH];
+  char datasetAddress[MAX_LENGTH] = {0};
+  char namedPipeFilename[MAX_LENGTH] = {0};
+  char weightsFileAddress[MAX_LENGTH] = {0};
+  char classifierNum[MAX_LENGTH] = {0};
 
   /* Get file descriptor of the read end of the pipe shared by this process
    * and its parent process */
-  int pipefd = atoi(argv[1]);
+  const int pipefd = std::stoi(argv[1]);
   read(pipefd, datasetAddress, MAX_LENGTH);
   read(pipefd, namedPipeFilename, MAX_LENGTH);
   read(pipefd, weightsFileAddress, MAX_LENGTH);
-  read(pipefd, index, MAX_LENGTH);
+  read(pipefd, classifierNum, MAX_LENGTH);
   close(pipefd);
 
-  std::vector<std::vector<std::string>> weightVectors;
-  getWeights(weightVectors, weightsFileAddress);
+  const std::vector<std::vector<std::string>> weights =
+      getWeights(weightsFileAddress);
 
-  classifyDataset(weightVectors, datasetAddress, namedPipeFilename, index);
+  const int index = std::stoi(std::string(classifierNum));
+  classifyDataset(weights, datasetAddress, namedPipeFilename, index);
 }
 
-void LinearClassifier::getWeights(
-    std::vector<std::vector<std::string>> &weightVectors,
-    char *weightVectorFilename) {
-  std::ifstream weights;
-  std::vector<std::string> csvLine;
-  weights.open(weightVectorFilename);
-  std::string line;
+std::vector<std::vector<std::string>>
+LinearClassifier::getWeights(char *filename) {
+  std::vector<std::vector<std::string>> weights;
 
-  getline(weights, line);
-  while (getline(weights, line)) {
+  std::ifstream weightsFile;
+  weightsFile.open(filename);
+
+  std::vector<std::string> csvLine;
+  std::string line;
+  getline(weightsFile, line);
+  while (getline(weightsFile, line)) {
     csvLine.clear();
-    csvLine = parse_csv(line, CSV_DELIMITER);
-    weightVectors.push_back(csvLine);
+    csvLine = parse_line(line, CSV_DELIMITER);
+    weights.push_back(csvLine);
   }
 
-  weights.close();
+  weightsFile.close();
+  return weights;
 }
 
 void LinearClassifier::classifyDataset(
-    const std::vector<std::vector<std::string>> &weightVectors,
-    char *datasetFilename, char *namedPipeFilename, char *index) {
+    const std::vector<std::vector<std::string>> &weights, char *datasetFilename,
+    char *namedPipeFilename, const int index) {
   std::ifstream dataset;
   dataset.open(datasetFilename);
 
@@ -63,10 +63,10 @@ void LinearClassifier::classifyDataset(
 
   while (getline(dataset, line)) {
     csvLine.clear();
-    csvLine = parse_csv(line, CSV_DELIMITER);
+    csvLine = parse_line(line, CSV_DELIMITER);
     max = 0;
-    for (int i = 0; i < weightVectors.size(); i++) {
-      product = dotProduct(weightVectors[i], csvLine);
+    for (int i = 0; i < weights.size(); i++) {
+      product = dotProduct(weights[i], csvLine);
       if (product > max) {
         max = product;
         indexOfMax = i;
@@ -84,11 +84,12 @@ void LinearClassifier::classifyDataset(
   close(fd);
   dataset.close();
 }
+
 float LinearClassifier::dotProduct(const std::vector<std::string> &v1,
                                    const std::vector<std::string> &v2) {
   float product = 0;
   for (int i = 0; i < v2.size(); i++) {
     product += (stof(v1[i]) * stof(v2[i]));
   }
-  return product + stof(v1[v1.size() - 1]);
+  return product + stof(v1[v1.size() - 1]); // Add bias term.
 }

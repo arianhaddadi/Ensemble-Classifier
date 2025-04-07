@@ -1,6 +1,8 @@
 #include "utils.h"
+#include <sstream>
 
-std::vector<std::string> parse_csv(const std::string &line, char delimiter) {
+std::vector<std::string> parse_line(const std::string &line,
+                                    const char delimiter) {
   std::vector<std::string> result;
   std::stringstream ss(line);
   std::string item;
