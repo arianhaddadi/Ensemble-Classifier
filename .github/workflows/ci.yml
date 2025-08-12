@@ -1,0 +1,39 @@
+name: Classifiers CI
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Project
+        run: make
+      - name: Upload Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-binaries
+          path: |
+            ./build/bin/ensemble
+            ./build/bin/linear
+            ./build/bin/voter
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: my-binaries
+      - name: Make Binaries Executable
+        run: chmod +x ./ensemble ./linear ./voter
+      - name: Test
+        run: |
+          output=$(./ensemble ./assets/validation ./assets/weight_vectors)
+          test "$output" == "Accuracy: 97.2%"
+
+
