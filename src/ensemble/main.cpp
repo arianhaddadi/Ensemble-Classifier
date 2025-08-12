@@ -6,6 +6,10 @@ int main(int argc, char *argv[]) {
     std::cerr << "Wrong Number of arguments. Required num: 2, Given: " << argc;
     return -1;
   }
-  EnsembleClassifier::run(argv);
+
+  const std::string validationDirectory = argv[1];
+  const std::string weightsDirectory = argv[2];
+
+  EnsembleClassifier::run(validationDirectory, weightsDirectory);
   return 0;
 }

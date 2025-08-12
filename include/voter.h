@@ -9,9 +9,16 @@ public:
   /**
    * Runs the voter process.
    *
-   * @param[in] argv: Command-line arguments passed to the voter process.
+   * @param[in] linearNamedPipeName: Name of the named pipe between voter and
+   * linear classifiers
+   * @param[in] ensembleNamedPipeName: Name of the named pipe between vote and
+   * ensemble classifier
+   * @param[in] datasetLength: Length of the dataset
+   * @param[in] numOfClassifier: Num of linear classifiers
    */
-  static void run(char **argv);
+  static void run(const std::string &linearNamedPipeName,
+                  const std::string &ensembleNamedPipeName, int datasetLength,
+                  int numOfClassifier);
 
 private:
   /**

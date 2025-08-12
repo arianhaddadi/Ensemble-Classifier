@@ -9,10 +9,11 @@ public:
   /**
    * Runs the ensemble classifier process.
    *
-   * @param[in] argv: Command-line arguments passed to the ensemble classifier
-   * process.
+   * @param[in] validationDirectory: Directory that hosts validation files
+   * @param[in] weightsDirectory: Directory that hosts weight files
    */
-  static void run(char **argv);
+  static void run(const std::string &validationDirectory,
+                  const std::string &weightsDirectory);
 
 private:
   // Constants related to the ensemble classifier

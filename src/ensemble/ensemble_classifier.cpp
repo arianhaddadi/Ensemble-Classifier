@@ -1,5 +1,3 @@
-#include "ensemble_classifier.h"
-#include "utils.h"
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
@@ -8,12 +6,15 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-void EnsembleClassifier::run(char **argv) {
-  const std::string validationDirectory = argv[1];
-  const std::string weightsDirectory = argv[2];
+#include "ensemble_classifier.h"
+#include "utils.h"
 
-  std::string datasetFileAddress = validationDirectory + "/" + DATASET_FILENAME;
-  std::string labelsFileAddress = validationDirectory + "/" + LABELS_FILENAME;
+void EnsembleClassifier::run(const std::string &validationDirectory,
+                             const std::string &weightsDirectory) {
+  const std::string datasetFileAddress =
+      validationDirectory + "/" + DATASET_FILENAME;
+  const std::string labelsFileAddress =
+      validationDirectory + "/" + LABELS_FILENAME;
 
   const std::vector<int> labels = getLabels(labelsFileAddress);
 

@@ -1,34 +1,24 @@
-#include "linear_classifier.h"
-#include "utils.h"
 #include <fcntl.h>
 #include <fstream>
 #include <sstream>
 #include <unistd.h>
 
-void LinearClassifier::run(char **argv) {
-  char datasetAddress[MAX_LENGTH] = {0};
-  char namedPipeFilename[MAX_LENGTH] = {0};
-  char weightsFileAddress[MAX_LENGTH] = {0};
-  char classifierNum[MAX_LENGTH] = {0};
+#include "linear_classifier.h"
+#include "utils.h"
 
-  /* Get file descriptor of the read end of the pipe shared by this process
-   * and its parent process */
-  const int pipefd = std::stoi(argv[1]);
-  read(pipefd, datasetAddress, MAX_LENGTH);
-  read(pipefd, namedPipeFilename, MAX_LENGTH);
-  read(pipefd, weightsFileAddress, MAX_LENGTH);
-  read(pipefd, classifierNum, MAX_LENGTH);
-  close(pipefd);
+void LinearClassifier::run(const std::string &datasetAddress,
+                           const std::string &namedPipeFilename,
+                           const std::string &weightsFileAddress,
+                           const int index) {
 
   const std::vector<std::vector<std::string>> weights =
       getWeights(weightsFileAddress);
 
-  const int index = std::stoi(std::string(classifierNum));
   classifyDataset(weights, datasetAddress, namedPipeFilename, index);
 }
 
 std::vector<std::vector<std::string>>
-LinearClassifier::getWeights(char *filename) {
+LinearClassifier::getWeights(const std::string &filename) {
   std::vector<std::vector<std::string>> weights;
 
   std::ifstream weightsFile;
@@ -48,12 +38,13 @@ LinearClassifier::getWeights(char *filename) {
 }
 
 void LinearClassifier::classifyDataset(
-    const std::vector<std::vector<std::string>> &weights, char *datasetFilename,
-    char *namedPipeFilename, const int index) {
+    const std::vector<std::vector<std::string>> &weights,
+    const std::string &datasetFilename, const std::string &namedPipeFilename,
+    const int index) {
   std::ifstream dataset;
   dataset.open(datasetFilename);
 
-  int fd = open(namedPipeFilename, O_WRONLY);
+  const int fd = open(namedPipeFilename.c_str(), O_WRONLY);
 
   std::string line;
   std::vector<std::string> csvLine;

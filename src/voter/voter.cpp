@@ -1,31 +1,19 @@
-#include "voter.h"
-#include "utils.h"
 #include <fcntl.h>
 #include <map>
 #include <unistd.h>
 
-void Voter::run(char **argv) {
-  // Name of named pipe shared between this process and ensemble classifier
-  const std::string ensembleNamedPipeName = argv[1];
+#include "utils.h"
+#include "voter.h"
 
-  char linearNamedPipeName[MAX_LENGTH] = {0};
-  char datasetLengthStr[MAX_LENGTH] = {0};
-  char numOfClassifiersStr[MAX_LENGTH] = {0};
-
-  int fd = open(ensembleNamedPipeName.c_str(), O_RDONLY);
-  read(fd, linearNamedPipeName, MAX_LENGTH);
-  read(fd, datasetLengthStr, MAX_LENGTH);
-  read(fd, numOfClassifiersStr, MAX_LENGTH);
-  close(fd);
-
-  const int datasetLength = std::stoi(datasetLengthStr);
-  const int numOfClassifier = std::stoi(numOfClassifiersStr);
+void Voter::run(const std::string &linearNamedPipeName,
+                const std::string &ensembleNamedPipeName,
+                const int datasetLength, const int numOfClassifier) {
 
   std::vector<std::vector<int>> table(datasetLength,
                                       std::vector<int>(numOfClassifier));
 
   const int numOfTotalData = numOfClassifier * datasetLength;
-  fd = open(linearNamedPipeName, O_RDONLY);
+  const int fd = open(linearNamedPipeName.c_str(), O_RDONLY);
   for (int i = 0; i < numOfTotalData; i++) {
     char readBuffer[MAX_LENGTH];
     read(fd, readBuffer, MAX_LENGTH);

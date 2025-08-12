@@ -9,10 +9,16 @@ public:
   /**
    * Runs the linear classifier process.
    *
-   * @param[in] argv: Command-line arguments passed to the linear classifier
-   * process.
+   * @param[in] datasetAddress: Location of dataset on disk
+   * @param[in] namedPipeFilename: Name of the FIFO pipe shared between this
+   * process and its parent process
+   * @param[in] weightsFileAddress: Location of the weights file for this
+   * classifier
+   * @param[in] index: Index of this classifier among all linear classifiers
    */
-  static void run(char **argv);
+  static void run(const std::string &datasetAddress,
+                  const std::string &namedPipeFilename,
+                  const std::string &weightsFileAddress, int index);
 
 private:
   /**
@@ -22,7 +28,8 @@ private:
    * @param[in] filename: Path to the weights CSV file.
    * @returns A 2D vector containing the weights read from the file.
    */
-  static std::vector<std::vector<std::string>> getWeights(char *filename);
+  static std::vector<std::vector<std::string>>
+  getWeights(const std::string &filename);
 
   /**
    * Classifies the dataset using the provided weights and writes the results
@@ -35,7 +42,8 @@ private:
    */
   static void
   classifyDataset(const std::vector<std::vector<std::string>> &weights,
-                  char *datasetFilename, char *namedPipeFilename, int index);
+                  const std::string &datasetFilename,
+                  const std::string &namedPipeFilename, int index);
 
   /**
    * Calculates the dot product of two vectors of strings, where each string
